@@ -19,8 +19,8 @@ class SessionCreationResponse(BaseModel):
 
     session_id: Optional[int] = None
     session_name: Optional[str] = None
-    db_connection_uri: str = Field(None)
-    session_db_path: str = Field(None)
+    db_connection_uri: Optional[str] = Field(None)
+    session_db_path: Optional[str] = Field(None)
     created_at: Optional[datetime] = None
     error_message: Optional[str] = None
 

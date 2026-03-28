@@ -16,6 +16,15 @@ class InferenceServerAPIClient:
         }
         self.timeout = timeout
 
+    def _normalize_base_url(self, base_url: str) -> str:
+        cleaned = base_url.strip().rstrip("/")
+        if not cleaned.startswith(("http://", "https://")):
+            cleaned = f"http://{cleaned}"
+        # If users accidentally pass backend URL ending with /api, normalize to root.
+        if cleaned.endswith("/api"):
+            cleaned = cleaned[: -len("/api")]
+        return cleaned
+
     def _make_request(
         self,
         base_url: str,
@@ -23,7 +32,8 @@ class InferenceServerAPIClient:
         endpoint: str,
         data: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        url = urljoin(base_url.rstrip("/"), endpoint)
+        normalized_base_url = self._normalize_base_url(base_url=base_url)
+        url = urljoin(normalized_base_url.rstrip("/"), endpoint)
         try:
             response = requests.request(
                 method, url, headers=self.headers, json=data, timeout=self.timeout

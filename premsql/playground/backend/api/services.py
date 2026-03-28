@@ -38,7 +38,19 @@ class SessionManageService:
     def create_session(
         self, request: SessionCreationRequest
     ) -> SessionCreationResponse:
-        response = self.client.get_session_info(base_url=request.base_url)
+        try:
+            response = self.client.get_session_info(base_url=request.base_url)
+        except Exception as e:
+            return SessionCreationResponse(
+                status_code=500,
+                status="error",
+                error_message=(
+                    "Failed to reach AgentServer. Use the AgentServer URL (port 8100), "
+                    "not the Playground backend URL (port 8000). "
+                    f"Details: {e}"
+                ),
+            )
+
         if response.get("status") == 500:
             return SessionCreationResponse(
                 status_code=500,
@@ -175,11 +187,8 @@ class CompletionService:
             )
 
         try:
-            # Small Hack ;_)
-            base_url = session.base_url
-            base_url = f"http://{base_url}"
             session_inference_response = self.client.post_completion(
-                base_url=base_url, question=request.question
+                base_url=session.base_url, question=request.question
             )
         except Exception as e:
             logger.error(f"Unexpected error during completion: {str(e)}")

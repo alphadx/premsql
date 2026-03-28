@@ -34,16 +34,34 @@ def _render_error(error: str, sql: str, using: str) -> Dict[str, Any]:
 
 
 def _render_data(result, sql: str, using: str) -> Dict[str, Any]:
-    table = pd.DataFrame(data=result.fetchall(), columns=result.keys())
+    if hasattr(result, "fetchall") and hasattr(result, "keys"):
+        table = pd.DataFrame(data=result.fetchall(), columns=result.keys())
+    elif isinstance(result, list):
+        if len(result) == 0:
+            table = pd.DataFrame()
+        elif isinstance(result[0], dict):
+            table = pd.DataFrame(result)
+        elif isinstance(result[0], (tuple, list)):
+            table = pd.DataFrame(result)
+        else:
+            table = pd.DataFrame({"value": result})
+    else:
+        table = pd.DataFrame({"value": [result]})
+
     if len(table) > 200:
         logger.info("Truncating output table to first 200 rows only")
         table = table.iloc[:200, :]
     
     if any(table.columns.duplicated()):
         logger.info(f"Found duplicate columns: {table.columns[table.columns.duplicated()].tolist()}")
-        # Create unique column names by adding suffixes
-        table.columns = [f"{col}_{i}" if i > 0 else col 
-                        for i, col in enumerate(table.columns)]
+        # Create unique column names by adding suffixes per repeated name.
+        seen = {}
+        unique_columns = []
+        for col in table.columns:
+            count = seen.get(col, 0)
+            unique_columns.append(f"{col}_{count}" if count > 0 else col)
+            seen[col] = count + 1
+        table.columns = unique_columns
         logger.info(f"Renamed columns to: {table.columns.tolist()}")
 
     to_show = {"sql_string": sql, "error_from_model": None, "dataframe": table}

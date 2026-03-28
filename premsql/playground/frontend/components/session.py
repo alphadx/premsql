@@ -38,7 +38,7 @@ class SessionComponent:
             ):
                 base_url = st.text_input(
                     label="base_url",
-                    placeholder="the base url in which AgentServer is running"
+                    placeholder="AgentServer URL (example: https://<codespace>-8100.app.github.dev)"
                 )
                 button = st.form_submit_button(label="Submit")
             if button:
